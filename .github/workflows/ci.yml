@@ -14,9 +14,9 @@ permissions:
 
 jobs:
   test:
-    # 2026-10-03 dani · repo personal (pocharlies/): arc-k8s solo existe para pocharlies-org.
-    # Público, así que no gasta minutos. Vuelve a arc-k8s si el repo pasa a pocharlies-org.
-    runs-on: ubuntu-latest
+    # Excepción INFRA-1254 (2026-11-10, devops): repo público; el código de un fork
+    # no se ejecuta en arc-k8s (DinD privilegiado con egress al clúster). Fork → runner de GitHub.
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || 'arc-k8s' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

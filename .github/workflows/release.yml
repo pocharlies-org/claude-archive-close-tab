@@ -17,9 +17,7 @@ permissions:
 
 jobs:
   version:
-    # 2026-10-03 dani · repo personal (pocharlies/): arc-k8s solo existe para pocharlies-org.
-    # Público, así que no gasta minutos. Vuelve a arc-k8s si el repo pasa a pocharlies-org.
-    runs-on: ubuntu-latest
+    runs-on: arc-k8s
     outputs:
       version: ${{ steps.v.outputs.version }}
       new: ${{ steps.v.outputs.new }}
@@ -41,7 +39,7 @@ jobs:
   build:
     needs: version
     if: needs.version.outputs.new == 'true'
-    runs-on: ubuntu-latest
+    runs-on: arc-k8s
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,11 +55,16 @@ jobs:
   changelog:
     needs: version
     if: needs.version.outputs.new == 'true'
-    runs-on: ubuntu-latest
+    runs-on: arc-k8s
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: gh CLI (el runner ARC no la trae)
+        run: |
+          v=2.103.3
+          curl -fsSL "https://github.com/cli/cli/releases/download/v${v}/gh_${v}_linux_amd64.tar.gz" | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gh_${v}_linux_amd64/bin" >> "$GITHUB_PATH"
       - name: Changelog from the merged pull requests and their commits
         env:
           GH_TOKEN: ${{ github.token }}
@@ -75,6 +78,8 @@ jobs:
 
   publish:
     needs: [version, build, changelog]
+    # ci-runners-arc exception: ubuntu-latest on purpose (2026-11-10, owner: devops).
+    # Public repository: this job writes releases with the repository token.
     runs-on: ubuntu-latest
     permissions:
       contents: write
